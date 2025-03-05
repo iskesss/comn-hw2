@@ -1,0 +1,5 @@
+python3 Receiver1.py 5005 output.txt
+
+python3 Sender1.py 127.0.0.1 5005 input.txt
+
+
