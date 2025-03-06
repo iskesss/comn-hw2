@@ -20,14 +20,14 @@ def send_file_over_rdt1(remoteHost, port, filename):
 
     header = struct.pack("!B", 1) # we want to send an EOF packet now that we're out of data to transmit
      
-    sock.sendto(header,(remoteHost, port)) 
+    sock.sendto(header, (remoteHost, port)) 
     sock.close()
-    print("File has successfully been sent")
+    print("File has successfully been sent.")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python sender.py <remoteHost> <port> <filename>")
+        print("Usage: python3 Sender1.py <ip> <port> <file_to_send>")
         sys.exit(1)  
     remoteHost = sys.argv[1]
     port = int(sys.argv[2])
