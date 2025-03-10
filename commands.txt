@@ -1,13 +1,40 @@
+		     LINUX TC COMMANDS
 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+Use this command to flush all previous configuration rules:
+
+$ sudo tc qdisc del dev lo root
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+Realize a link with 10ms one-way propagation delay
+(equivalently, 20ms round-trip propagation delay given our 
+symmetric link assumption), 0.5% packet loss rate in each 
+direction (or, ~1% packet loss rate overall), and 5 Mbit/s
+bandwidth limit:
+
+$ sudo tc qdisc add dev lo root netem loss 0.5% delay 10ms rate 5mbit
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+
+		     TERMINAL COMMANDS
+PT1 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
 [Terminal 1]: $ python3 Receiver1.py 5005 output.txt
 [Terminal 2]: $ python3 Sender1.py 127.0.0.1 5005 input.txt
--_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+PT2 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
 [Terminal 1]: $ python3 Receiver2.py 5005 output.txt
 [Terminal 2]: $ python3 Sender2.py 127.0.0.1 5005 input.txt 1
--_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+PT3 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
 [Terminal 1]: $ python3
 [Terminal 2]: $ python3
--_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
+PT4 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
+
 [Terminal 1]: $ python3
 [Terminal 2]: $ python3
+
 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
