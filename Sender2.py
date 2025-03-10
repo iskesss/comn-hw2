@@ -43,8 +43,8 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
                     # Timeout occurred, so we retransmit the packet
                     continue
 
-    # Send the EOF packet: flag=1 indicates end-of-file.
-    # We use the current sequence number for the EOF packet.
+    # send the EOF packet: flag=1 indicates end-of-file.
+    # we use the current sequence number for the EOF packet.
     eof_header = struct.pack(OUTGOING_HEADER_FORMAT, 1, seq)
     eof_packet_acked = False
     while not eof_packet_acked:
