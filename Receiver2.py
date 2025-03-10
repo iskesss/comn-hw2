@@ -4,7 +4,7 @@ import sys
 import struct
 import socket
 
-INCOMING_PACKET_SIZE = 1024 # Packet size for receiving data
+INCOMING_PACKET_SIZE = 1027 # Packet size for receiving data
 INCOMING_HEADER_FORMAT = "!BB" # Header format: flag (1 byte) and sequence number (1 byte)
 BYTES_PER_HEADER = struct.calcsize(INCOMING_HEADER_FORMAT)
 

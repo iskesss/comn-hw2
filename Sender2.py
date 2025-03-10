@@ -5,7 +5,7 @@ import socket
 import time
 
 # Configuration parameters
-BYTES_PER_OUTGOING_PACKET = 1024
+BYTES_PER_OUTGOING_PACKET = 1027
 # Header: flag (1 byte) and sequence number (1 byte)
 OUTGOING_HEADER_FORMAT = "!BB"
 BYTES_PER_OUTGOING_HEADER = struct.calcsize(OUTGOING_HEADER_FORMAT)
