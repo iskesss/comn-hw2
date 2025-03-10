@@ -3,8 +3,8 @@ import socket
 import sys
 import struct
 
-BYTES_PER_HEADER = struct.calcsize("!B") # ! = big endian, B = uchar 
-BYTES_PER_PACKET = 1024
+BYTES_PER_HEADER = struct.calcsize("!HB") # ! = big endian, H = ushort, B = uchar 
+BYTES_PER_PACKET = 1027 # 3 bytes for header, 1024 for payload 
 
 def receive_file_over_rdt1(filename, listen_port):
     listen_ip = "127.0.0.1" # I had to hardcore this for our assignment
@@ -17,8 +17,8 @@ def receive_file_over_rdt1(filename, listen_port):
             packet, address = sock.recvfrom(BYTES_PER_PACKET)
             if len(packet) < BYTES_PER_HEADER:
                 continue # we want to ignore incomplete packets
-            flag = struct.unpack("!B", packet[:BYTES_PER_HEADER])[0]
-            data = packet[BYTES_PER_HEADER:] # funky python string parsing magic :)
+            flag = struct.unpack("!HB", packet[:BYTES_PER_HEADER])[1] # ignore seq, extract flag
+            data = packet[BYTES_PER_HEADER:] 
             if flag == 1:
                 # We just received an EOF packet, indicating the end of our transmission
                 print("EOF Packet Received! File transfer complete :)") 
