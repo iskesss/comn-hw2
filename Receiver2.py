@@ -24,11 +24,13 @@ def receive_file_over_rdt3(filename, listen_port):
                 continue
             flag, seq = struct.unpack(INCOMING_HEADER_FORMAT, packet[:BYTES_PER_HEADER])
             if flag == 0: # if current packet holds data
+                print(f"—> [Received pack {seq}]┐")
                 if seq == expected_seq:
                     # then write the packet's payload data to the output file
                     data = packet[BYTES_PER_HEADER:]
                     outfile.write(data)
                     ack = struct.pack(ACK_FORMAT, seq) # acknowledge received packet
+                    print(f"<– [Sending ack {seq}  ]┘")
                     sock.sendto(ack, sender_addr)
                     expected_seq = 1 - expected_seq # flip expected seq number 0->1 or 1->0
                 else:
@@ -36,8 +38,9 @@ def receive_file_over_rdt3(filename, listen_port):
                     last_ack = 1 - expected_seq # toggle bit
                     ack = struct.pack(ACK_FORMAT, last_ack)
                     sock.sendto(ack, sender_addr)
-            elif flag == 1:  # if we receive an EOF packet
-                # then acknowledge it and break the loop
+            elif flag == 1:  # if we receive an EOF packet, acknowledge it and break the loop
+                print(f"—> [Received EOF pack]┐")
+                print(f"<— [Sending EOF ack  ]┘")
                 ack = struct.pack(ACK_FORMAT, seq)
                 sock.sendto(ack, sender_addr)
                 break
