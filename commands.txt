@@ -4,15 +4,12 @@ Use this command to flush all previous configuration rules:
 
 $ sudo tc qdisc del dev lo root
 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
-Realize a link with 10ms one-way propagation delay
-(equivalently, 20ms round-trip propagation delay given our 
-symmetric link assumption), 0.5% packet loss rate in each 
-direction (or, ~1% packet loss rate overall), and 5 Mbit/s
-bandwidth limit:
+Use this command to realize a link with:
+- 5ms one-way propagation delay (so 10ms round-trip delay given our symmetric link) 
+- 0.5% packet loss rate in each direction (i.e. ~1% loss rate overall)
+- 10Mbps bandwidth limit 
 
-$ sudo tc qdisc add dev lo root netem loss 0.5% delay 10ms rate 5mbit
--_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
-
+$ sudo tc qdisc add dev lo root netem loss 0.5% delay 5ms rate 10mbit
 -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-
 
 

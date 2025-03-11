@@ -19,7 +19,7 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(retry_timeout)
     seq = 0  # Alternating bit: 0 then 1
-    print(f"Now sending {filename}...")
+    print(f"Now sending {filename}...\n")
     with open(filename, "rb") as file:
         while True:
             data = file.read(PAYLOAD_SIZE)
@@ -30,7 +30,7 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
             packet = header + data
             packet_acked = False
             while not packet_acked:
-                print(f"└[Sending pack {seq}] —>")
+                print(f"└[Sending pack {seq}] —————>")
                 sock.sendto(packet, (remoteHost, port))
                 try:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
@@ -38,7 +38,7 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
                     ack_seq, = struct.unpack(ACK_FORMAT, response[:BYTES_PER_ACK_HEADER])
                     if ack_seq == seq:
                         packet_acked = True
-                        print(f"┌[Received ack {seq}] <—")
+                        print(f"┌[Received ack {seq}] <—————")
                         # Toggle sequence number (alternating bit)
                         seq = 1 - seq
                     # If we get an ACK for the wrong sequence, ignore it and wait
