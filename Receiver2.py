@@ -49,7 +49,7 @@ def receive_file_over_rdt3(filename, listen_port):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python3 Receiver1.py <port> <save_received_file_as>")
+        print("Usage: python3 Receiver2.py <port> <save_received_file_as>")
         sys.exit(1)
     listen_port = int(sys.argv[1])
     filename = sys.argv[2]
