@@ -5,7 +5,7 @@ import socket
 INCOMING_PACKET_SIZE = 1028  # Increased by 1 byte for larger sequence number
 INCOMING_HEADER_FORMAT = "!BH"  # Header format: flag (1 byte) and sequence number (2 bytes)
 BYTES_PER_HEADER = struct.calcsize(INCOMING_HEADER_FORMAT)
-ACK_FORMAT = "!H"  # 2 bytes for the sequence number (16-bit)
+ACK_FORMAT = "!H"  # 2 bytes for the seq number (16-bit)
 MAX_SEQ_NUM = pow(2, 8 * struct.calcsize(ACK_FORMAT))
 
 def receive_file_over_gbn(listen_port, filename):
@@ -32,17 +32,15 @@ def receive_file_over_gbn(listen_port, filename):
                 if seq == expected_seq % MAX_SEQ_NUM:
                     data = packet[BYTES_PER_HEADER:]  # extract data from payload
                     outfile.write(data) # send data to "application layer" (outfile)
-
                     ack = struct.pack(ACK_FORMAT, seq) # build ack
                     sock.sendto(ack, sender_addr) # send ack
-
                     expected_seq += 1 # expected_seq++
-                    print(f"Packet {seq} accepted, expecting {expected_seq % MAX_SEQ_NUM} next")
+                    print(f"😁Packet {seq} accepted, expecting {expected_seq % MAX_SEQ_NUM} next")
                 else:
                     last_successfully_received = (expected_seq - 1) % MAX_SEQ_NUM # resend ACK for most recently received in-order packet (thereby requesting next expected packet from sender)
                     ack = struct.pack(ACK_FORMAT, last_successfully_received)
                     sock.sendto(ack, sender_addr)
-                    print(f"Packet {seq} discarded, resending ACK for {last_successfully_received}")
+                    print(f"😡Packet {seq} discarded, resending ACK for {last_successfully_received}")
 
             elif flag == 1:  # if we receive an EOF packet, acknowledge it and break the loop
                 ack = struct.pack(ACK_FORMAT, seq)
@@ -62,4 +60,3 @@ if __name__ == "__main__":
     filename = sys.argv[2]
 
     receive_file_over_gbn(listen_port, filename)
-
