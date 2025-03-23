@@ -3,8 +3,8 @@ import sys
 import struct
 import socket
 
-INCOMING_PACKET_SIZE = 1028  # Increased by 1 byte for larger sequence number
-INCOMING_HEADER_FORMAT = "!BH"  # Header format: flag (1 byte) and sequence number (2 bytes)
+INCOMING_PACKET_SIZE = 1028 
+INCOMING_HEADER_FORMAT = "!BH"  # header format: flag (1 byte) and seq number (2 bytes)
 BYTES_PER_HEADER = struct.calcsize(INCOMING_HEADER_FORMAT)
 ACK_FORMAT = "!H"  # 2 bytes for the seq number (16-bit)
 MAX_SEQ_NUM = pow(2, 8 * struct.calcsize(ACK_FORMAT))
