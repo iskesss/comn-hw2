@@ -7,7 +7,7 @@ INCOMING_PACKET_SIZE = 1028
 INCOMING_HEADER_FORMAT = "!BH"  # header format: flag (1 byte) and seq number (2 bytes)
 BYTES_PER_HEADER = struct.calcsize(INCOMING_HEADER_FORMAT)
 ACK_FORMAT = "!H"  # 2 bytes for the seq number (16-bit)
-MAX_SEQ_NUM = pow(2, 8 * struct.calcsize(ACK_FORMAT))
+MSN = pow(2, 8 * struct.calcsize(ACK_FORMAT))
 
 def receive_file_over_gbn(listen_port, filename):
     listen_ip = "127.0.0.1"  # I had to hardcode this for our assignment
@@ -28,17 +28,17 @@ def receive_file_over_gbn(listen_port, filename):
             flag, seq = struct.unpack(INCOMING_HEADER_FORMAT, packet[:BYTES_PER_HEADER])
 
             if flag == 0: # if current packet holds data
-                print(f"Received packet with seq={seq}, expected={expected_seq % MAX_SEQ_NUM}")
+                print(f"Received packet with seq={seq}, expected={expected_seq % MSN}")
 
-                if seq == expected_seq % MAX_SEQ_NUM:
+                if seq == expected_seq % MSN:
                     data = packet[BYTES_PER_HEADER:]  # extract data from payload
                     outfile.write(data) # send data to "application layer" (outfile)
                     ack = struct.pack(ACK_FORMAT, seq) # build ack
                     sock.sendto(ack, sender_addr) # send ack
                     expected_seq += 1 # expected_seq++
-                    print(f"😁Packet {seq} accepted, expecting {expected_seq % MAX_SEQ_NUM} next")
+                    print(f"😁Packet {seq} accepted, expecting {expected_seq % MSN} next")
                 else:
-                    last_successfully_received = (expected_seq - 1) % MAX_SEQ_NUM # resend ACK for most recently received in-order packet (thereby requesting next expected packet from sender)
+                    last_successfully_received = (expected_seq - 1) % MSN # resend ACK for most recently received in-order packet (thereby requesting next expected packet from sender)
                     ack = struct.pack(ACK_FORMAT, last_successfully_received)
                     sock.sendto(ack, sender_addr)
                     print(f"😡Packet {seq} discarded, resending ACK for {last_successfully_received}")
