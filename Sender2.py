@@ -1,4 +1,4 @@
-# Jordan Bouret, s2795423
+# Jordan Bouret 2795423
 import sys
 import struct
 import socket

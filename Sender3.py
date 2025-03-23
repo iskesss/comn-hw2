@@ -1,4 +1,4 @@
-# Jordan Bouret, s2795423
+# Jordan Bouret 2795423
 import sys
 import struct
 import socket
@@ -106,6 +106,7 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
                         base = actual_ack + 1
                         print(f"Window slides to base={base} (mod {base % MSN})")
 
+                        # delete ACK'd packets from local cache
                         for i in range(old_base, base):
                             if i in packets:
                                 del packets[i]
