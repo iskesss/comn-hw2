@@ -58,7 +58,7 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
             original_timeout = sock.gettimeout()
             sock.settimeout(0.01)  # just a short timeout for sake of non-blocking
 
-            any_ack_received = False
+            any_acks_received = False
 
             # try to collect all available ACKs
             try:
@@ -66,7 +66,7 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
                     print(f"{ack_seq} ACK'd 🤩")
-                    any_ack_received = True
+                    any_acks_received = True
 
                     # determine if this ACK advances the window (and handle wraparound ofc)
                     base_mod = base % MSN
@@ -91,11 +91,11 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
             sock.settimeout(original_timeout) # restore original timeout
 
             # if we're waiting for ACKs but literally none have arrived, wait for the full timeout
-            if (not any_ack_received) and (base < next_seq):
+            if (not any_acks_received) and (base < next_seq):
                 try:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
-                    print(f"{ack_seq} ACK'd")
+                    print(f"{ack_seq} ACK'd ⏳")
 
                     # process the ACK (same logic as above)
                     base_mod = base % MSN
