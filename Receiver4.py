@@ -52,7 +52,7 @@ def receive_file_over_sr(listen_port, filename, windowSize):
                         del buffer[base]
                         base += 1
                         print(f"Window advanced to base={base % MSN}")
-                elif actual_seq < base: # seq is less than window base
+                elif seq < base: # seq is less than window base
                     # this is a duplicate of a packet we've already processed (our initial ack(s) probably got lost or took too long). 
                     # we should still send an ACK to let the sender know we got it
                     ack = struct.pack(ACK_FORMAT, seq)
@@ -60,7 +60,7 @@ def receive_file_over_sr(listen_port, filename, windowSize):
                     print(f"Duplicate packet {seq}, already processed. Sent ACK.")
                 else:
                     # packet is beyond our window, ignore it
-                    print(f"Packet {seq} is beyond window, ignoring")
+                    print(f"Packet {seq} is beyond window base of {base}, ignoring! | actual_seq is {actual_seq}" )
 
             elif flag == 1:  # if we receive an EOF packet, acknowledge it and break the loop
                 ack = struct.pack(ACK_FORMAT, seq)

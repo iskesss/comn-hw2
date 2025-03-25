@@ -89,14 +89,14 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
             
             sock.settimeout(original_timeout)  # Restore original timeout
             
-            # If no ACKs received, wait for a full timeout and check for expired packets
+            # if no ACKs received, wait for a full timeout and check for expired packets
             if not any_acks_received and base < next_seq:
                 try:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
                     print(f"{ack_seq} ACK'd ⏳")
                     
-                    # Process the ACK
+                    # process the ACK
                     base_mod = base % MSN
                     actual_ack = base + ((ack_seq - base_mod) % MSN)
                     
@@ -113,7 +113,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                             print(f"Window slides to base={base} (mod {base % MSN})")
                             
                 except socket.timeout:
-                    # Check for timed out packets and retransmit only those - in SR we don't retransmit the entire window
+                    # check for timed out packets and retransmit only those (in SR we don't retransmit the entire window)
                     current_time = time.time()
                     for seq in list(send_times.keys()):
                         if seq < base:
@@ -122,9 +122,9 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                             if seq in packets:
                                 del packets[seq]
                         elif current_time - send_times[seq] >= retry_timeout:
-                            # This packet has timed out, retransmit it
+                            # this packet has timed out, retransmit it
                             if seq in packets:
-                                print(f"Timeout for packet {seq % MSN}, retransmitting")
+                                print(f"Timeout for packet {seq % MSN}, retransmitting 😡")
                                 sock.sendto(packets[seq], (remoteHost, port))
                                 send_times[seq] = current_time  # Update send time
 
@@ -164,7 +164,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python3 Sender3.py <remote_host> <remote_port> <filename> <retry_timeout> <window_size>")
+        print("Usage: python3 Sender4.py <remote_host> <remote_port> <filename> <retry_timeout> <window_size>")
         sys.exit(1)
 
     remoteHost = sys.argv[1]
