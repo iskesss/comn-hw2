@@ -80,6 +80,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                         
                         # slide window if base packet is ACKed
                         while base in acked:
+                            acked.remove(base)
                             base += 1
                             # print(f"Window slides to base={base} (mod {base % MSN})")
             except socket.timeout:
@@ -106,6 +107,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                             del send_times[actual_ack]
                         
                         while base in acked:
+                            acked.remove(base)
                             base += 1
                             # print(f"Window slides to base={base} (mod {base % MSN})")
                             
@@ -145,10 +147,11 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 sock.sendto(eof_header, (remoteHost, port))
                 # print(f"Timeout waiting for EOF ACK, retry {retries}/{max_retries}")
             if retries >= max_retries:
-                print("EOF was not acknowledged after {max_retries} send attempts... I give up. (we can only assume file transfer is complete)")
+                # print("EOF was not acknowledged after {max_retries} send attempts... I give up (we can only assume file transfer is complete)")
                 eof_acked = True
 
         # print("File transmission complete!")
+        sock.close()
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
