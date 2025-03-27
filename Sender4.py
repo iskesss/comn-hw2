@@ -128,29 +128,25 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
         eof_header = struct.pack(OUTGOING_HEADER_FORMAT, 1, next_seq % MSN)
         sock.sendto(eof_header, (remoteHost, port))
         # print(f"Sent EOF packet with seq {next_seq % MSN}")
-        
-        eof_send_time = time.time()
-        eof_ackd = False
 
-        # try to get EOF ACK with retries
-        while not eof_ackd:
+        max_retries = 4
+        retries = 0
+        eof_acked = False
+
+        while not eof_acked:
             try:
                 response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                 ack_seq = struct.unpack(ACK_FORMAT, response)[0]
                 if ack_seq == next_seq % MSN:
+                    eof_acked = True
                     # print(f"Received ACK for EOF packet {ack_seq}")
-                    eof_ackd = True
-            except socket.timeout: # resend EOF packet if timeout occurs
-                current_time = time.time()
-                if current_time - eof_send_time >= retry_timeout:
-                    # print("Timeout waiting for EOF ACK, resending EOF")
-                    sock.sendto(eof_header, (remoteHost, port))
-                    eof_send_time = current_time
-                    
-                    # after a few retries let's just assume the file transfer is complete
-                    if (current_time - eof_send_time) >= (retry_timeout * 4): # i chose 4 somewhat arbitrarily here
-                        # print("Maximum EOF retries reached, assuming transfer complete")
-                        break
+            except socket.timeout:
+                retries += 1
+                sock.sendto(eof_header, (remoteHost, port))
+                # print(f"Timeout waiting for EOF ACK, retry {retries}/{max_retries}")
+            if retries >= max_retries:
+                print("EOF was not acknowledged after {max_retries} send attempts... I give up. (we can only assume file transfer is complete)")
+                eof_acked = True
 
         # print("File transmission complete!")
 
