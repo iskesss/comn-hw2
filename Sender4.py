@@ -1,4 +1,7 @@
 # Jordan Bouret 2795423
+
+# TODO: CHECK FOR A MEMORY LEAK HERE AND RECEIVER4.PY, AND MATCH TERMINAL OUTPUTS TO COURSEWORK SPEC
+
 import sys
 import struct
 import socket
@@ -9,15 +12,13 @@ BYTES_PER_OUTGOING_HEADER = struct.calcsize(OUTGOING_HEADER_FORMAT)
 BYTES_PER_OUTGOING_PACKET = 1028
 PAYLOAD_SIZE = BYTES_PER_OUTGOING_PACKET - BYTES_PER_OUTGOING_HEADER
 
-# ACK header: 16-bit unsigned short for the sequence number
 ACK_FORMAT = "!H"
 BYTES_PER_ACK_HEADER = struct.calcsize(ACK_FORMAT)
 
 MSN = pow(2, 8 * BYTES_PER_ACK_HEADER) # MSN = "Max Sequence Number". for our assignment this is gonna be 2^16 (65,536)
 
 def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
-    # Check if window size is valid
-    if windowSize > MSN:
+    if windowSize > MSN: # make sure the user didn't give us a ridiculous windowSize
         print(f"Sorry: Window size cannot exceed {MSN}")
         return
 
@@ -31,12 +32,11 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
     acked = set()  # set of sequence numbers that have been ACKed
     eof_reached = False
 
-    print(f"Now sending {filename} with window size {windowSize}...\n")
+    # print(f"Now sending {filename} with window size {windowSize}...\n")
 
     with open(filename, "rb") as file:
         while (not eof_reached) or (base < next_seq):
-            # Send new packets within the window
-            while (next_seq < base + windowSize) and (not eof_reached):
+            while (next_seq < base + windowSize) and (not eof_reached): # send new packets within the window
                 data = file.read(PAYLOAD_SIZE)
                 if not data:
                     eof_reached = True
@@ -48,14 +48,13 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 packets[next_seq] = packet # store curr packet locally in case we end up needing to retransmit it
                 send_times[next_seq] = time.time()  # Record send time for timeout checking
 
-                print(f"Sending {next_seq % MSN}")
+                # print(f"Sending {next_seq % MSN}")
                 sock.sendto(packet, (remoteHost, port))
                 
                 next_seq += 1 # next_seq++
 
-            # Try to receive ACKs with a short timeout
             original_timeout = sock.gettimeout()
-            sock.settimeout(0.01)  # Short non-blocking timeout to collect available ACKs
+            sock.settimeout(0.01)  # just a short non-blocking timeout to collect available ACKs
             
             any_acks_received = False
             
@@ -63,38 +62,36 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 while True:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
-                    print(f"{ack_seq} ACK'd 🤩")
+                    # print(f"{ack_seq} ACK'd 🤩")
                     any_acks_received = True
                     
-                    # Calculate the actual sequence number this ACK represents
+                    # figure out which seq number this ACK actually represents
                     base_mod = base % MSN
                     actual_ack = base + ((ack_seq - base_mod) % MSN)
                     
                     if base <= actual_ack < next_seq:  # if this is a valid ACK
-                        # Mark this packet as ACKed
-                        acked.add(actual_ack)
+                        acked.add(actual_ack) # mark this packet as ACK'd
                         
-                        # Remove the packet from our tracking
+                        # remove the packet from our tracking
                         if actual_ack in packets:
                             del packets[actual_ack]
                         if actual_ack in send_times:
                             del send_times[actual_ack]
                         
-                        # Slide window if base packet is ACKed
+                        # slide window if base packet is ACKed
                         while base in acked:
                             base += 1
-                            print(f"Window slides to base={base} (mod {base % MSN})")
+                            # print(f"Window slides to base={base} (mod {base % MSN})")
             except socket.timeout:
-                pass  # No more ACKs available at the moment
+                pass
             
-            sock.settimeout(original_timeout)  # Restore original timeout
+            sock.settimeout(original_timeout)
             
             # if no ACKs received, wait for a full timeout and check for expired packets
             if not any_acks_received and base < next_seq:
                 try:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
-                    print(f"{ack_seq} ACK'd ⏳")
                     
                     # process the ACK
                     base_mod = base % MSN
@@ -110,57 +107,52 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                         
                         while base in acked:
                             base += 1
-                            print(f"Window slides to base={base} (mod {base % MSN})")
+                            # print(f"Window slides to base={base} (mod {base % MSN})")
                             
                 except socket.timeout:
                     # check for timed out packets and retransmit only those (in SR we don't retransmit the entire window)
                     current_time = time.time()
                     for seq in list(send_times.keys()):
-                        if seq < base:
-                            # This packet is outside the window, remove it
+                        if seq < base: # this packet is outside our window... remove it!
                             del send_times[seq]
-                            if seq in packets:
+                            if seq in packets: # also rm from local cache
                                 del packets[seq]
                         elif current_time - send_times[seq] >= retry_timeout:
-                            # this packet has timed out, retransmit it
+                            # resend packet(s) that have timed out
                             if seq in packets:
-                                print(f"Timeout for packet {seq % MSN}, retransmitting 😡")
+                                # print(f"Timeout for packet {seq % MSN}, retransmitting 😡")
                                 sock.sendto(packets[seq], (remoteHost, port))
-                                send_times[seq] = current_time  # Update send time
+                                send_times[seq] = current_time  # update send time
 
-        # send EOF packet
+        # application layer doesn't have any more data to transmit, so send the EOF packet 
         eof_header = struct.pack(OUTGOING_HEADER_FORMAT, 1, next_seq % MSN)
         sock.sendto(eof_header, (remoteHost, port))
-        print(f"Sent EOF packet with seq {next_seq % MSN}")
+        # print(f"Sent EOF packet with seq {next_seq % MSN}")
         
         eof_send_time = time.time()
-        eof_acked = False
+        eof_ackd = False
 
-        # Try to get EOF ACK with retries
-        while not eof_acked:
+        # try to get EOF ACK with retries
+        while not eof_ackd:
             try:
                 response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                 ack_seq = struct.unpack(ACK_FORMAT, response)[0]
                 if ack_seq == next_seq % MSN:
-                    print(f"Received ACK for EOF packet {ack_seq}")
-                    eof_acked = True
-                else:
-                    print(f"Received unexpected ACK {ack_seq}, waiting for EOF ACK")
-            except socket.timeout:
-                # Resend EOF packet if timeout
+                    # print(f"Received ACK for EOF packet {ack_seq}")
+                    eof_ackd = True
+            except socket.timeout: # resend EOF packet if timeout occurs
                 current_time = time.time()
                 if current_time - eof_send_time >= retry_timeout:
-                    print("Timeout waiting for EOF ACK, resending EOF")
+                    # print("Timeout waiting for EOF ACK, resending EOF")
                     sock.sendto(eof_header, (remoteHost, port))
                     eof_send_time = current_time
                     
-                    # After a few retries, assume file transfer is complete
-                    if current_time - eof_send_time >= retry_timeout * 3:
-                        print("Maximum EOF retries reached, assuming transfer complete")
+                    # after a few retries let's just assume the file transfer is complete
+                    if (current_time - eof_send_time) >= (retry_timeout * 4): # i chose 4 somewhat arbitrarily here
+                        # print("Maximum EOF retries reached, assuming transfer complete")
                         break
 
-        print("File transmission complete!")
-
+        # print("File transmission complete!")
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
