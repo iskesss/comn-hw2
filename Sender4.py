@@ -1,7 +1,5 @@
 # Jordan Bouret 2795423
 
-# TODO: CHECK FOR A MEMORY LEAK HERE AND RECEIVER4.PY, AND MATCH TERMINAL OUTPUTS TO COURSEWORK SPEC
-
 import sys
 import struct
 import socket
@@ -27,7 +25,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
 
     base = 0
     next_seq = 0
-    packets = {}  # local transient cache of packets in case retransmission is needed. i'm storing this as a hashmap with {seq : packet}
+    local_packets = {}  # local transient cache of packets in case retransmission is needed. i'm storing this as a hashmap with {seq : packet}
     send_times = {}  # dictionary to store send time for each packet {seq: send_time}
     acked = set()  # set of sequence numbers that have been ACKed
     eof_reached = False
@@ -45,7 +43,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 packet_header = struct.pack(OUTGOING_HEADER_FORMAT, 0, next_seq % MSN)
                 packet = packet_header + data
 
-                packets[next_seq] = packet # store curr packet locally in case we end up needing to retransmit it
+                local_packets[next_seq] = packet # store curr packet locally in case we end up needing to retransmit it
                 send_times[next_seq] = time.time()  # Record send time for timeout checking
 
                 # print(f"Sending {next_seq % MSN}")
@@ -66,15 +64,15 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                     any_acks_received = True
                     
                     # figure out which seq number this ACK actually represents
-                    base_mod = base % MSN
+                    base_mod = base % MSN # honestly I think that accounting for seq wraparound was overkill for this assignment, but I really wanted to try it :)
                     actual_ack = base + ((ack_seq - base_mod) % MSN)
                     
                     if base <= actual_ack < next_seq:  # if this is a valid ACK
                         acked.add(actual_ack) # mark this packet as ACK'd
                         
                         # remove the packet from our tracking
-                        if actual_ack in packets:
-                            del packets[actual_ack]
+                        if actual_ack in local_packets:
+                            del local_packets[actual_ack]
                         if actual_ack in send_times:
                             del send_times[actual_ack]
                         
@@ -88,21 +86,20 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
             
             sock.settimeout(original_timeout)
             
-            # if no ACKs received, wait for a full timeout and check for expired packets
-            if not any_acks_received and base < next_seq:
+            if (not any_acks_received) and (base < next_seq):
                 try:
                     response, _ = sock.recvfrom(BYTES_PER_ACK_HEADER)
                     ack_seq = struct.unpack(ACK_FORMAT, response)[0]
                     
-                    # process the ACK
                     base_mod = base % MSN
                     actual_ack = base + ((ack_seq - base_mod) % MSN)
                     
                     if base <= actual_ack < next_seq:
                         acked.add(actual_ack)
                         
-                        if actual_ack in packets:
-                            del packets[actual_ack]
+                        if actual_ack in local_packets:
+                            del local_packets[actual_ack]
+
                         if actual_ack in send_times:
                             del send_times[actual_ack]
                         
@@ -117,13 +114,13 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                     for seq in list(send_times.keys()):
                         if seq < base: # this packet is outside our window... remove it!
                             del send_times[seq]
-                            if seq in packets: # also rm from local cache
-                                del packets[seq]
+                            if seq in local_packets: # also rm from local cache
+                                del local_packets[seq]
                         elif current_time - send_times[seq] >= retry_timeout:
                             # resend packet(s) that have timed out
-                            if seq in packets:
+                            if seq in local_packets:
                                 # print(f"Timeout for packet {seq % MSN}, retransmitting 😡")
-                                sock.sendto(packets[seq], (remoteHost, port))
+                                sock.sendto(local_packets[seq], (remoteHost, port))
                                 send_times[seq] = current_time  # update send time
 
         # application layer doesn't have any more data to transmit, so send the EOF packet 
@@ -150,7 +147,6 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 # print("EOF was not acknowledged after {max_retries} send attempts... I give up (we can only assume file transfer is complete)")
                 eof_acked = True
 
-        # print("File transmission complete!")
         sock.close()
 
 if __name__ == "__main__":
