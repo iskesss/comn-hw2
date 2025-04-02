@@ -81,10 +81,10 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python3 Sender2.py <ip> <port> <file_to_send> <retry_timeout>")
+        print("Usage: python3 Sender2.py <ip> <port> <file_to_send> <retry_timeout_in_ms>")
         sys.exit(1)
     remoteHost = sys.argv[1]
     port = int(sys.argv[2])
     filename = sys.argv[3]
-    retry_timeout = float(sys.argv[4])
+    retry_timeout = float(sys.argv[4]) / 1000.0 # convert milliseconds to seconds
     send_file_over_rdt3(remoteHost, port, filename, retry_timeout)
