@@ -132,13 +132,13 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python3 Sender3.py <remote_host> <remote_port> <filename> <retry_timeout> <window_size>")
+        print("Usage: python3 Sender3.py <remote_host> <remote_port> <filename> <retry_timeout_in_ms> <window_size>")
         sys.exit(1)
 
     remoteHost = sys.argv[1]
     port = int(sys.argv[2])
     filename = sys.argv[3]
-    retry_timeout = float(sys.argv[4])
+    retry_timeout = float(sys.argv[4]) / 1000.0 # convert milliseconds to seconds
     windowSize = int(sys.argv[5])
 
     send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize)
