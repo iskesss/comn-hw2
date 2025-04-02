@@ -44,7 +44,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 packet = packet_header + data
 
                 local_packets[next_seq] = packet # store curr packet locally in case we end up needing to retransmit it
-                send_times[next_seq] = time.time()  # Record send time for timeout checking
+                send_times[next_seq] = time.time()
 
                 # print(f"Sending {next_seq % MSN}")
                 sock.sendto(packet, (remoteHost, port))

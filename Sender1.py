@@ -11,7 +11,7 @@ def send_file_over_rdt1(remoteHost, port, filename):
     seq = 0 # this is rdt1, so seq doesn't matter and will be ignored by the receiver
     with open(filename, "rb") as file: 
         while True:
-            # Read data such that header + data fits in BYTES_PER_PACKET
+            # read data such that header + data fits in BYTES_PER_PACKET
             data = file.read(BYTES_PER_PACKET - BYTES_PER_HEADER)
             if not data:
                 break
@@ -25,7 +25,7 @@ def send_file_over_rdt1(remoteHost, port, filename):
     header = struct.pack("!HB",seq,1) # we want to send an EOF packet now that we're out of data to transmit
     sock.sendto(header, (remoteHost, port)) 
     sock.close()
-    print("File has successfully been transferred (EOF packet just sent).")
+    # print("File has successfully been transferred (EOF packet just sent).")
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
