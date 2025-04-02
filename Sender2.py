@@ -2,6 +2,8 @@
 import sys
 import struct
 import socket
+import time
+import os
 
 BYTES_PER_OUTGOING_PACKET = 1027
 # Header: flag (1 byte) and sequence number (1 byte)
@@ -14,6 +16,10 @@ ACK_FORMAT = "!B"
 BYTES_PER_ACK_HEADER = struct.calcsize(ACK_FORMAT)
 
 def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
+    transmission_start_time = time.time()
+    total_retransmissions = 0
+    file_size = os.path.getsize(filename) # this'll be used to calculate throughput later 
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(retry_timeout)
     seq = 0  # we can get away with simply making this an alternating bit: 0 then 1
@@ -40,6 +46,7 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
                     # if we get an ACK for the wrong seq, ignore it and wait
                 except socket.timeout:
                     # timeout occurred (we must retransmit)
+                    total_retransmissions += 1
                     continue
 
     # send the EOF packet: flag=1 indicates end-of-file.
@@ -59,10 +66,18 @@ def send_file_over_rdt3(remoteHost, port, filename, retry_timeout):
                 eof_packet_acked = True
                 # print("✓[Accepted EOF ack (yippee!!!)] <–")
         except socket.timeout:
+            total_retransmissions += 1
             continue
-
+        
     sock.close()
-    # print("File has successfully been sent.")
+    transmission_end_time = time.time()
+    total_transfer_time = transmission_end_time - transmission_start_time
+    throughput = (file_size / 1024) / total_transfer_time # this gives us throughput in Kbps 
+
+    # "the sender must output number of retransmissions and throughput (in Kbytes/second) only in a single line;
+    # no other terminal output should be displayed; the following output implies that the
+    # number of retransmissions is 10 and the throughput is 200 Kbytes/second: `10 200` "
+    print(f"{total_retransmissions} {int(throughput)}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
