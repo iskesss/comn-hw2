@@ -1,9 +1,9 @@
 # Jordan Bouret 2795423
-
 import sys
 import struct
 import socket
 import time
+import os
 
 OUTGOING_HEADER_FORMAT = "!BH"  # 1 byte for type, 2 bytes for sequence number
 BYTES_PER_OUTGOING_HEADER = struct.calcsize(OUTGOING_HEADER_FORMAT)
@@ -19,6 +19,9 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
     if windowSize > MSN: # make sure the user didn't give us a ridiculous windowSize
         print(f"Sorry: Window size cannot exceed {MSN}")
         return
+    
+    transmission_start_time = time.time()
+    file_size = os.path.getsize(filename) # this'll be used to calculate throughput later
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(retry_timeout)
@@ -148,6 +151,10 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
                 eof_acked = True
 
         sock.close()
+        transmission_end_time = time.time()
+        total_transfer_time = transmission_end_time - transmission_start_time
+        throughput = (file_size / 1024) / total_transfer_time # this gives us throughput in Kbps
+        print(int(throughput))
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
@@ -157,7 +164,7 @@ if __name__ == "__main__":
     remoteHost = sys.argv[1]
     port = int(sys.argv[2])
     filename = sys.argv[3]
-    retry_timeout = float(sys.argv[4]) / 1000.0
+    retry_timeout = float(sys.argv[4]) / 1000.0  # convert milliseconds to seconds
     windowSize = int(sys.argv[5])
 
     send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize)
