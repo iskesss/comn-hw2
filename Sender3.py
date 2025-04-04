@@ -2,6 +2,8 @@
 import sys
 import struct
 import socket
+import time
+import os
 
 OUTGOING_HEADER_FORMAT = "!BH"  # 1 byte for type, 2 bytes for sequence number
 BYTES_PER_OUTGOING_HEADER = struct.calcsize(OUTGOING_HEADER_FORMAT)
@@ -18,6 +20,9 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
     if windowSize > MSN: # make sure the user didn't give us a ridiculous windowSize
         print(f"Sorry: Window size cannot exceed {MSN}")
         return
+
+    transmission_start_time = time.time()
+    file_size = os.path.getsize(filename) # this'll be used to calculate throughput later
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(retry_timeout)
@@ -126,6 +131,12 @@ def send_file_over_gbn(remoteHost, port, filename, retry_timeout, windowSize):
         except socket.timeout:
             # print("Timeout waiting for EOF ACK, but file transfer might be complete")
             pass
+
+        sock.close()
+        transmission_end_time = time.time()
+        total_transfer_time = transmission_end_time - transmission_start_time
+        throughput = (file_size / 1024) / total_transfer_time # this gives us throughput in Kbps
+        print(int(throughput))
 
         # print("File transmission complete!")
 
