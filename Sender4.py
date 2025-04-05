@@ -158,7 +158,7 @@ def send_file_over_sr(remoteHost, port, filename, retry_timeout, windowSize):
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
-        print("Usage: python3 Sender4.py <remote_host> <remote_port> <filename> <retry_timeout> <window_size_in_ms>")
+        print("Usage: python3 Sender4.py <remote_host> <remote_port> <filename> <retry_timeout_in_ms> <window_size>")
         sys.exit(1)
 
     remoteHost = sys.argv[1]
